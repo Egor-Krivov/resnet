@@ -68,5 +68,4 @@ class Resnet110(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        print(x.size())
         return self.fe(x)
