@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
-from torch.autograd import Variable
+from torch import Tensor
 from tensorboardX import SummaryWriter
 
 from resnet.models.resnet import Resnet110
@@ -56,20 +56,20 @@ if __name__ == '__main__':
         total_loss = 0
         correct = 0
         for inputs, targets in train_loader:
+            print(inputs.size())
             if use_cuda:
                 inputs, targets = inputs.cuda(), targets.cuda()
             optimizer.zero_grad()
-            inputs, targets = Variable(inputs), Variable(targets)
             outputs = model(inputs)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
 
-            total_loss += loss.data[0]
-            _, predicted = torch.max(outputs.data, 1)
-            correct += predicted.eq(targets.data).cpu().sum()
+            total_loss += loss
+            _, predicted = torch.max(outputs, 1)
+            correct += predicted.eq(targets).sum()
 
-        return total_loss / train_size, correct / train_size
+        return total_loss / train_size, float(correct) / train_size
 
 
     def test():
@@ -79,17 +79,16 @@ if __name__ == '__main__':
         for inputs, targets in test_loader:
             if use_cuda:
                 inputs, targets = inputs.cuda(), targets.cuda()
-            inputs, targets = Variable(inputs, volatile=True), Variable(targets, volatile=True)
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
+            with torch.no_grad():
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
 
-            total_loss += loss.data[0]
-            _, predicted = torch.max(outputs.data, 1)
-            correct += predicted.eq(targets.data).cpu().sum()
+                total_loss += loss
+                _, predicted = torch.max(outputs, 1)
+                correct += predicted.eq(targets).sum()
 
-        return total_loss / test_size, correct / test_size
+        return total_loss / test_size, float(correct) / test_size
 
-    #for iter in range()
 
     for epoch in range(n_epochs):
         if epoch in lr_dec_moments:
@@ -102,5 +101,7 @@ if __name__ == '__main__':
         loss, acc = test()
         writer.add_scalar('test/loss', loss, epoch)
         writer.add_scalar('test/acc', acc, epoch)
+
+    print(loss, acc)
 
     writer.export_scalars_to_json('./log.json')

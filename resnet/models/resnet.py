@@ -50,8 +50,6 @@ class Resnet110(nn.Module):
         self.n_chans = 16
 
         self.fe = nn.Sequential(nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False),
-                                nn.BatchNorm2d(16),
-                                nn.ReLU(),
                                 self._make_block(ResBlock, n_chans=16, n_blocks=18, stride=1),
                                 self._make_block(ResBlock, n_chans=32, n_blocks=18, stride=2),
                                 self._make_block(ResBlock, n_chans=64, n_blocks=18, stride=2),
@@ -59,7 +57,7 @@ class Resnet110(nn.Module):
                                 nn.ReLU(),
                                 GlobalAvgPool2d(),
                                 nn.Linear(64, n_chans_out),
-                                nn.BatchNorm2d(n_chans_out))
+                                nn.BatchNorm1d(n_chans_out, n_chans_out))
 
     def _make_block(self, block, n_chans, n_blocks, stride):
         strides = [stride] + [1] * (n_blocks - 1)
@@ -70,4 +68,5 @@ class Resnet110(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        print(x.size())
         return self.fe(x)
